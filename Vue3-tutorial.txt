@@ -1,0 +1,659 @@
+Bài 2: Event handling
+<style>
+	.card {
+		display: flex;
+		align-content: center;
+		justify-content: center;
+		width: 180px;
+		height: 180px;
+		bg: #dedede;
+		mb: 30px;
+	}
+</style>
+- event-handling.html:
+<section id="contact">
+	.cart-container
+		.cart @mouseover="onLogEvent"> Mouse over (ENTER)
+		.cart @mouseleave="onLogEvent"> Mouse leave
+		.cart @dblclick="onLogEvent"> Double click
+		.cart @mousemove="onMouseMoveEvent"> Mouse move {{ `${x}-${y}` }}
+		.cart @dblclick="onLogEvent($event, 150,100)"> Double click
+</section>
+
+- event-handling.js:
+method: {
+	onLogEvent(){
+		console.log("running event...");
+	},
+	
+	//Muốn xem thông số thì thêm e hoặc event vào:
+	onLogEvent(event){
+		console.log("running event...", event);
+	},
+
+	onMouseMoveEvent(event){
+		console.log("running mouse move event...", event);
+		this.x = event.offsetX;
+		this.y = event.offsetY;
+	},
+
+	//Sự kiện double click hiển thị tọa độ:
+	onLogEvent(event, newX, newY){
+		console.log("running event...", event);
+		this.x = newX;
+		this.y = newY;
+	},
+}
+==================================================================================
+Bài 4: Đi sâu vào component
+1. Component & Global Styles
+-Fix lỗi tạo mới component:
+ + Vào trang editorconfig.org để copy code sang bên file bên dưới
+ + new file: .editorconfig:
+   [*]
+   end_of_line = lf
+   insert_final_newline = true
+   indent_style = space
+   indent_size = 2
+
+-> khi tạo component mới mà chưa fix lại thì ctrl+s lần đầu là được
+
+- src/components/ tạo Modal.vue:
++ Vào trang getbootstrap.com/docs/5.0/components/modal/
+  Để lấy code modal bên trong đó
++ <template>
+   .modal.fade.show
+     .modal-dialog
+       .modal-content
+	 .modal-header
+	 .modal-body
+	 .modal-footer
+
+  <style scoped lang="css"> //scoped chỉ áp dụng cho chính nơi chứa nó thôi
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1060;
+      //display: none;
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      outline: 0;
+      bg-color: rgba(0,0,0,0.2);
+    }
+
+    .fade {
+      transition: opacity .15s linear;
+    }
+
+    .modal.fade .modal-dialog {
+      transition: transform .3s ease-out;
+      transform: translate(0,-50px);
+    }
+
+    .modal-dialog {
+      max-width: 500px;
+      margin: 4.75rem auto;
+    }
+
+    .modal-dialog {
+      position: relative;
+      width: auto;
+      margin: 0.5rem;
+      pointer-events: none;
+    }
+
+.modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 0.3rem;
+    outline: 0;
+}
+
+.modal-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    border-top-left-radius: calc(0.3rem - 1px);
+    border-top-right-radius: calc(0.3rem - 1px);
+}
+
+.modal-body {
+    position: relative;
+    flex: 1 1 auto;
+    padding: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.75rem;
+    border-top: 1px solid #dee2e6;
+    border-bottom-right-radius: calc(0.3rem - 1px);
+    border-bottom-left-radius: calc(0.3rem - 1px);
+}
+
+- src/App.vue:
+<script>
+   import Modal from "./components/Modal.vue";
+   ...
+    components:{
+     BaseModal: Modal,
+    }
+
+<template>
+   h1.fade: Hello from vue cli =))
+   <base-modal />
+
+
+<style>
+   #app{
+     BỎ margin-top: 60px;
+   }
+
+- src/assets/css/global.css:
+ + ctrl+x #app{} trong <style> của App.vue paste sang đây
+
+- src/main.js:
+import "./assets/css/global.css";
+
+- vào trong trang: https://meyerweb.com/eric/tools/css/reset/
+ + copy code reset css paste vào trên đầu file: src/assets/css/global.css
+---------------------------------------------------------------------------------
+2. Props & Notes:
+- MyModal.vue:
+<template>
+.modal-content :class="{ 'bg-purple' : theme === 'contact' }"
+.modal-header
+  h2: {{ title }}
+.modal-body
+  p: {{ content }}
+
+<script>
+export default{
+ props: {
+  title: {
+   type: String,
+   required: true,
+  },
+  content: {
+   type: String,
+   default: "",
+  },
+  theme: {
+   type: String,
+   default: "example",
+   validator(value){
+    return ["example", "sales", "contact"].includes(value);
+   }
+  }
+}
+ data(){
+  return{
+   //title: "This is title",
+  };
+ }
+}
+
+<style>
+  .modal-content.bg-purple{
+   background-color: purple;
+  }
+
+- App.vue:
+<template>
+ ...
+ <base-modal title="Đây là tiêu đề gọi từ App.vue" 
+	     content="Để rỗng hoặc có nd"
+	     theme="example(/sales/contact)"
+---------------------------------------------------------------------------------
+3. Emit events child to parent component:phát ra các sự kiện con cho 
+thành phần mẹ.
+- App.vue:
+<template>
+  <base-modal v-if="isShowModal"
+              ...
+	      @cancel="onToggleModal"
+  />
+  <button @click="onToggleModal"> Toggle modal
+
+<script>
+  export default{
+   ...
+   data(){
+    return{
+     isShowModal: false,
+    };
+   },
+   method: {
+    onToggleModal(){
+     this.isShowModal = !this.isShowModal;
+    }
+   }
+  }
+
+- MyModal.vue:
+<template>
+  .modal.fade(bỏ class .show đi) @click="onCloseModal"
+
+<script>
+  ...
+  data(){},
+  methods:{
+   onCloseModal(){
+    this.$emit("cancel");
+   }
+  }
+
+---------------------------------------------------------------------------------
+4. Slot (chỗ, vị trí).
+- App.vue:
+<template>
+  <base-modal ...>
+    <template v-slot:header>
+      h2: this is header
+    <template v-slot:footer>
+      button @click="onToggleModal": Cancel
+    <label> name
+    <input type="password" />
+  </base-modal>
+
+- MyModal.vue:
+<template>
+  .modal-header
+    <slot name="header"></slot>
+  .modal-body
+    <slot />
+  .modal-footer
+    <slot name="footer"></slot>
+
+---------------------------------------------------------------------------------
+5. Event Modifiers.
+- vào trang event modifier vue js: https://vuejs.org/guide/essentials
+/event-handling.html#event-modifiers để copy sự kiện
+- MyModal.vue:
+<template>
+  .modal.fade @click.self="onCloseModal"
+
+---------------------------------------------------------------------------------
+6. Teleport Component.(thành phần dịch chuyển)
+- Vào trang teleport vue3: https://vuejs.org/guide/built-ins/teleport.html
+(nó là 1 thẻ html)
+- App.vue:
+<template>
+  <teleport to="body">
+    paste <base-modal> vào trong
+  </teleport>
+->Khi đó base-modal sẽ là con trực tiếp của thẻ body
+==================================================================================
+Bài 5: Binding dữ liệu trong form input cùng ví dụ
+1. Docs and setup
+2. Sử dụng v-model cho input & textarea
+- QuizForm.vue:
+<script>
+  export default{
+    data(){
+      return{
+	quiz: {
+	  fullName: "Phùng An Bình",
+	  email: "",
+	  desc: "",
+	}
+      }
+    }
+  }
+
+<template>
+  ...
+  label: What is your full name?
+  input... v-model="quiz.fullName"
+  {{ quiz.fullName }}
+  label: What is your email address?
+  input... v-model="quiz.email"
+  {{ quiz.email }}
+  label: What is your project all about?
+  textarea... v-model="quiz.desc"
+  {{ quiz.desc }}
+---------------------------------------------------------------------------------
+3. Xử lý tốt hơn với @submit trong form.
+- QuizForm.vue:
+<template>
+  Đổi thẻ div đầu tiên thành thẻ form
+  form.screen @submit.prevent="onSubmit" //prevent: sau khi submit sẽ ko chuyển 
+trang. Lúc này chúng ta bỏ sự kiện @click="onSubmit" ở nút button bên dưới đi
+  .action
+    ...
+    button.btn.btn-submit type="submit" @click="onSubmit": Submit
+
+<script>
+  data(){},
+  methods: {
+   onSubmit(){
+    console.log(this.quiz);
+   }
+  }
+
+---------------------------------------------------------------------------------
+4. Sử dụng v-model cho checkbox, select, radio.
+- QuizForm.vue:
+<template>
+  .section .options
+  .col-4 v-for="option in jobOptions" :key="option.id"
+   label.option
+    span: {{ option.name }}
+    input type="checkbox" :value="option.id" v-model="quiz.jobs"
+  ...
+  span: Branding
+  input type="checkbox" checked v-model="branding" /> //bỏ checked đi
+
+  span: Strategy
+  input type="checkbox" v-model="strategy" />
+
+  span: Motion Design
+  input type="checkbox" v-model="motionDesign" />
+
+<script>
+  data(){
+   ...
+   quiz:{
+    ...
+    jobs: [],
+   },
+   //motionDesign: false,
+   jobOptions: [
+    {
+     id: 1,
+     name: "Branding",
+    },
+    {
+     id: 2,
+     name: "Strategy",
+    },
+    {
+     id: 3,
+     name: "Motion Design",
+    },
+    {
+     id: 4,
+     name: "Development",
+    },
+    {
+     id: 5,
+     name: "Product Design",
+    },
+    {
+     id: 6,
+     name: "Marketing",
+    },
+    {
+     id: 7,
+     name: "Copywriting",
+    },
+    {
+     id: 8,
+     name: "Advisory",
+    },
+    {
+     id: 9,
+     name: "Compositing",
+    },
+   ]
+  },
+  methods: {
+   onSubmit(){
+    ...
+    //console.log(this.motionDesign);
+   }
+  }
+
+- global.css:
+.section.options .col-4{
+ margin: 0 0.5rem;
+ margin-bottom: 1rem;
+}
+---------------------------------------------------------------------------------
+Chạy project trên máy khác -> cmd: yarn install / npm install
+5. Practices and validation form.
+- QuizForm.vue:
+<template>
+  label: What is your full name?
+  input :class="{ error: error.status, success: success.status }"
+  p.error-text v-if="error.status">{{ error.text }}
+  p.success-text v-if="success.status">{{ success.text }}
+  .section .options
+  .col-4 v-for="option in jobOptions" :key="option.id"
+   .block :style="{backgroundColor: quiz.jobs.includes(option.id) ? 
+		   'var(--primary)' : ''}"
+
+<script>
+  ...
+  quiz:{},
+  error:{
+   text: "",
+   status:false,
+  },
+  success:{
+   text: "",
+   status:false,
+  },
+  ...
+  methods: {
+   onSubmit(){
+    if(this.quiz.fullName.length < 6 || this.quiz.fullName.length > 18){
+     this.error = {
+      text: "Error! Full name should be 6-18 characters.",
+      status: true,
+     }
+    }else if(this.quiz.fullName.length > 5 && this.quiz.fullName.length < 19){
+     this.success = {
+      text: "Look great ^^",
+      status: true,
+     }
+    }else{
+     this.error = {
+      text: "",
+      status:false,
+     }
+    }
+   }
+  }
+
+- global.css:
+.form-item input.error{
+  border-color: var(--error);
+}
+
+.error-text{
+ margin-top: 0.25rem;
+ color: var(--error);
+}
+
+.form-item input.success{
+  border-color: var(--primary);
+}
+
+.success-text{
+ margin-top: 0.25rem;
+ color: var(--primary);
+}
+==================================================================================
+Bài 6: Vue Router 4 & thay đổi nho nhỏ
+1. Thêm vue router 4 vào dự án
+- Vào trang router.vuejs.org đổi sang v4.x
+b1: get started
+b2: Tạo dự án mới:
++ vue create money_tasks -> manually ... -> Babel + enter -> v3s -> Prettier
+-> lint and fix: space and enter -> In dedicated .... -> n
++ cd money_tasks -> code . ->quay lại cmd: yarn add vue-router@4 (trong docs router vue v4.x)
+b3: config lại file
+- .editorconfig: (vào trang editorconfig copy code về)
+   # EditorConfig is awesome: https://EditorConfig.org
+
+   # top-most EditorConfig file
+   root = true
+
+   # Unix-style newlines with a newline ending every file
+   [*]
+   end_of_line = lf
+   insert_final_newline = true
+   indent_style = space
+   indent_size = 2
+
+b4:
+- src/router.js:
+import { createRouter, createWebHashHistory } from "vue-router";
+import Home from "./pages/home";
+
+const routes = [
+ {
+  path: "/",
+  component: Home,
+ }
+];
+
+const router = createRouter({
+ history: createWebHashHistory(process.env.BASE_URL),
+ routes,
+});
+
+export default router;
+
+- src/pages/home.vue:
+<template>
+ <h1>Homepage is here
+
+- src/main.js:
+import router from "./router";
+
+createApp(App).use(router).mount("#app");
+
+b5: Chạy dự án lên:
++ vào package.json -> bấm Debug -> serve vue-cli-service serve
+--------------------------------------------------------------------------------------------
+2. router-link component.
+- Xóa file HelloWorld.vue trong components đi -> tạo file components/Nav.vue:
+<template>
+  <nav class="nav"
+    <router-link to="/">Overview</router-link>
+    <router-link to="/transactions">Transactions</router-link>
+    <router-link to="/">Budgets</router-link>
+    <router-link to="/">Reports</router-link>
+    <router-link to="/">Settings</router-link>
+
+- src/App.vue:
+<template>
+  <base-nav />
+
+<script>
+import Nav from "./components/Nav.vue"
+...
+  components:{
+    BaseNav: Nav,
+  }
+
+- src/pages/transactions.vue:
+<template>
+  <h1>Transactions is here...
+
+- src/router.js:
+...
+import Transactions from "./pages/transactions"
+const routes = [
+  {
+    path: "/transactions",
+    component: Transactions,
+  }
+]
+--------------------------------------------------------------------------------------------
+3. Routes params.
+- src/router.js:
+import TransactionDetails from "./pages/transaction-details"
+const routes = [
+  {
+    path: "/transactions/:id",
+    component: Transactions,
+  }
+]
+
+- src/pages/transaction-details.vue:
+<template>
+  h1: Transaction details pages is here...
+  h1: {{ $route.params.id }}
+
+
+[
+  -> copy object trên màn hình -> qua bên console: const testing = paste
+  -> console.log({testing})
+]
+--------------------------------------------------------------------------------------------
+4. Dynamic links.
+- src/pages/transactions.vue:
+<template>
+  ...
+  <div class="item" v-for="transaction in transactions" :key="transaction.id">
+    <router-link :to="`/transactions/${transaction.id}`">{{ transaction.name }}</router-link>
+
+    <div class="price"> Price: {{ transaction.price }}
+<script>
+export default {
+  data(){
+    return{
+      transactions:[
+      {
+       id: 1,
+       name: 'Phùng An Bình',
+       salary: 300
+      },
+      {
+       id: 2,
+       name: 'Nguyễn Đình Thìn',
+       salary: 600
+      },
+      {
+       id: 3,
+       name: 'Phạm Mỹ Kha',
+       salary: 350
+      },
+     ]
+    }
+  }
+}
+
+- src/App.vue:
+- Bỏ đi css #app{
+  text-align: center;
+  -webkit...;
+  -moz-osx...;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
