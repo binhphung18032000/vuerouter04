@@ -640,9 +640,311 @@ export default {
   -webkit...;
   -moz-osx...;
 }
+================================================
+npm run lint -- --fix :để sửa lỗi --fix option
+================================================
+--------------------------------------------------------------------------------------------
+5. Redirects & điều hướng 404's.
+- src/router.js:
+import NotFound from "./pages/404"
+...
+{
+ path: "/ts",
+ redirect: "/transactions",
+},
+//{
+// path: "*",
+// component: NotFound,
+//},
+{
+ path: "/:pathMatch(.*)*",
+ component: NotFound,
+}
 
+- src/pages/404.vue:
+<template>
+ h1: 404 not found
+--------------------------------------------------------------------------------------------
+6. Code improvements.
+- src/router.js:
+import { createRouter, createWebHistory } from "vue-router";
+...
+{
+ path: "/",
+ name: "overview-route",
+ component: Home,
+},
+{
+ path: "/transactions",
+ name: "transaction-route",
+ component: Transactions,
+},
+{
+ path: "/transactions/:id",
+ name: "transaction-details-route",
+ component: TransactionDetails,
+},
 
+-> nếu có sửa path thì đường dẫn vẫn chạy bình thường với name, chỉ thay đổi tên path 
+nhưng vẫn link đến trang ban đầu định tuyến sẵn
 
+...
+const router = createRouter({
+ history: createWebHistory(process.env.BASE_URL),
+ routes,
+}); //->Sửa createWebHashHistory thành createWebHistory để ko còn dấu # trên link nữa 
+
+- src/components/NavTag.vue:
+<template>
+  <nav class="nav"
+    <router-link :to="{ name: 'overview-route' }">Overview</router-link>
+    <router-link :to="{ name: 'transaction-route' }">Transactions</router-link>
+    <router-link to="/">Budgets</router-link>
+    <router-link to="/">Reports</router-link>
+    <router-link to="/">Settings</router-link>
+
+- src/pages/transactions.vue:
+<div class="item" v-for="transaction in transactions" :key="transaction.id">
+    <router-link 
+      :to="{
+	name: 'transaction-details-route',
+	params: { id: transaction.id },
+      }"
+    >{{ transaction.name }}</router-link>
+==================================================================================
+Bài 7: Fetching Data & Vue JS Component Lifecycle
+1. Setup Json Server
+- search gg: json server -> https://www.npmjs.com/package/json-server 
+- cmd admin: 
++ npm install -g json-server
++ json-server
+- chạy lại cmd thường: json-server
+- vào dự án tạo folder data/db.json:
+{
+ "transactions": [
+  {
+   "id": 1,
+   "name": "Go to something",
+   "price": 100000
+  },
+  {
+   "id": 2,
+   "name": "Buy something",
+   "price": 200000
+  },
+ ]
+}
+- đi vào folder chứa dự án -> cmd -> json-server --watch data/db.json -> copy Resources 
+paste vào gg xem thử có data chưa (data server fake)
+--------------------------------------------------------------------------------------------
+2. Vue Lifecycle Hooks.
+3. Fetch All Data
+- gg: fetch javascript
+- src/pages/transactions.vue:
++ xóa dữ liệu trong transaction[], đi
++ data(){},
+created(){
+ fetch("http://localhost:3000/transactions")
+   .then((response) => response.json())
+   .then((data) => (this.transactions = data));
+},
+
+- chạy lại: json-server --watch data/db.json
+- vào xem console log hiển thị lên chưa
+- vào file json sửa lại và thêm dữ liệu mới sau đó chạy lại
+--------------------------------------------------------------------------------------------
+4. Fetch One & Loading...
+- src/pages/transaction-details.vue:
+<template>
+ <div v-if="transaction">
+   <h1>Id: {{ $route.params.id }}
+   <h3>Name: {{ transaction.name }}
+   <p>Price: {{ transaction.price }}
+ <div v-else>Loading transaction {{ $route.params.id }}
+...
+data(){
+ return{
+  transaction: null,
+ }
+},
+created(){
+ fetch("http://localhost:3000/transactions/" + this.$route.params.id)
+   .then((response) => response.json())
+   .then((data) => (this.transaction = data))
+   .then(() => console.log(this.transaction));
+},
+
+- inspect ->chọn network -> No throttling: slow 3G -> reload page + quan sát
+- src/pages/transactions.vue:
+<div v-if="transactions.length">
+  <div class="item">
+<div v-else> Loading transactions...
+- inspect ->chọn network -> No throttling: slow 3G -> reload page + quan sát
+==================================================================================
+Bài 8: Composition API "trong" Vue 3
+1. Data & Methods trong Composition API
+- src/pages/home-page.vue:
+<template>
+ h1
+ //p: {{ firstName }}
+ p: {{ secondName }} //Lúc sau mới làm dòng này
+ p: {{ car }}
+ button @click="onChangeSomeThing">Click me
+
+<script>
+import { ref, reactive } from "vue";
+export default{
+ setup(){
+  const firstName = ref("Binh Phung");
+  const secondName = ref({
+    name: "Hoa",
+    something: "female"
+  });
+  const car = reactive({
+   price: 100000,
+   name: "Mazda"
+  });
+
+  function onChangeSomeThing(){
+   console.log("running here..."); 
+   car.price = 200000;
+   secondName.value.name = "Hoa Thi"
+   firstName.value = "Tran Toan";
+   console.log(firstName);
+   console.log(secondName);
+   console.log(car);
+  }
+
+  return { car, firstName, secondName onChangeSomeThing };
+ }
+}
+- chạy dự án lên
+1.1. ref()
+1.2. reactive() and note
+- vào trong function onChangeSomeThing() xóa hết đi:
+let car = reactive({
+   price: 100000,
+   name: "Mazda"
+  });
+
+function onChangeSomeThing(){
+ secondName.value = {
+  name: "Nguyen Phu",
+  something: "Sharing",
+ };
+ car = {
+  price: 500000,
+  something: "toyota",
+ };
+ console.log(secondName);
+ console.log(car);
+}
+1.3. unref()
+--------------------------------------------------------------------------------------------
+1.4. Computed in composition API
+- src/pages/home-page.vue:
+<template>
+ <input type="text" v-model="searchText">
+ ul>li v-for="(customer, index) in customersFilted" :key="index"
+      {{ customer }}
+
+<script>
+ import { computed, ref, reactive } from "vue";
+ export default{
+ setup(){
+  const searchText = ref("");
+  const customers = reactive(["Something", "Binh Phung", "Anh Tran", "Duy Nguyen"]);
+  const customersFilled = computed(() =>
+   customers
+    .map((customer) => {
+      customer = customer.toLowerCase();
+      return customer;
+    })
+    .filter((customer) => customer.includes(searchText.value.toLowerCase()))
+  )
+  //bỏ console.log đi
+  return { searchText, customersFilted };
+ }
+--------------------------------------------------------------------------------------------
+1.5. Watch & WatchEffect
+- src/pages/home-page.vue:
+
+<script>
+ import { ..., watch, watchEffect } from "vue";
+ ...
+ watch(searchText, (newValue, oldValue) => {
+  console.log(newValue, oldValue);
+ });
+
+ watchEffect(() => {
+  if(searchText.value){
+   console.log("Run again");
+  }
+ });
+- mở cửa sổ console.log lên xem kết quả
+==================================================================================
+Bài 9: Setup() Params & Fetching Data trong Composition API
+1. Params trong setup().
+- src/pages/home-page.vue:
+<script>
+
+export default {
+ props: {
+  theme: {
+   type: String,
+   required: false,
+   default: "light",
+  },
+ },
+ //EX1
+ setup(props, context) {
+  console.log(props);
+  console.log(context);
+ }
+ //END EX1
+
+ // eslint-disable-next-line...
+ setup({theme}, {emit}) {
+  console.log(theme);
+  console.log(emit);
+ }
+}
+--------------------------------------------------------------------------------------------
+2. Chú ý thêm về Lifecycle Hooks Composition API
+3. Fetching Data trong setup()
+- src/pages/transactions-page.vue:
+<template>
+ ...
+ <div v-else-if="error">{{ error.message }}
+<script>
+import { ref } from "vue";
+export default{
+  //data(){},
+  //created(){},
+  setup(){
+   const transactions = ref([]);
+   const error = ref(null);
+
+   //console.log(transactions, error);
+
+   const fetchAll = async () => {
+    try{
+     const response = await fetch("http://localhost:3000/transactions");
+     //(1)console.log(response);
+     if(!response.ok) throw new Error("Something went wrong.");
+      //(2)console.log(await response.json());
+      transactions.value = await response.json();
+    }catch(err){
+     error.value = err;
+     console.log(error.value);
+    }
+    
+   };
+   fetchAll();
+
+   return { error, transactions };
+  },
+};
 
 
 
